@@ -14,8 +14,11 @@
  *   your object's keys or random transactions may fail.
  */
 export const encode = object => {
-  // Enter your solution here
-
+  // Enter your solution here  
+  console.log('object in encode ==> ',object);
+  const uintArrayObj = new Uint8Array(object).sort();
+  const sortJson = JSON.stringify(uintArrayObj);
+  return Buffer.from(sortJson);  
 };
 
 /**

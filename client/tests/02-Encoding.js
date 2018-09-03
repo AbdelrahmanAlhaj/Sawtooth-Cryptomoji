@@ -12,11 +12,13 @@ describe('Encoding module', function() {
     });
 
     it('should return a Buffer or an Uint8Array', function() {
+      console.log("encoded ==> ",encoded);
       expect(encoded).to.be.bytes;
     });
 
     it('should return a Buffer, parseable as a JSON string', function() {
       const stringified = encoded.toString();
+      console.log("stringified ==> ",stringified);
       expect(() => JSON.parse(stringified)).to.not.throw();
     });
 

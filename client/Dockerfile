@@ -2,7 +2,7 @@
 # available at: /usr/local/apache2/htdocs/
 
 FROM httpd:2.4
-
+    
 RUN echo "\
 \n\
 ServerName cryptomoji\n\
