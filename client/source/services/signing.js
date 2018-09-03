@@ -48,7 +48,7 @@ export const createKeys = () => {
   const privateKey = toBytes(createPrivateKey());
   return {
     privateKey : privateKey.toString('hex'),
-    publicKey: getPublicKey(toBytes(privateKey)).toString('hex')
+    publicKey: getPublicKey(privateKey.toString('hex')).toString('hex')
   }
 };
 

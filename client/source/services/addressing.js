@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 
+const hashSha512 = str => createHash('sha512').update(str).digest('hex');
 
 const NAMESPACE = '5f4d76';
 const PREFIXES = {
@@ -26,7 +27,12 @@ const PREFIXES = {
  */
 export const getCollectionAddress = (publicKey = null) => {
   // Enter your solution here
-
+  if (publicKey === null) {
+    return NAMESPACE + PREFIXES.COLLECTION;
+  } else {
+    const address = hashSha512(publicKey).slice(0, 62);
+    return NAMESPACE + PREFIXES.COLLECTION + address.toString('hex');
+  }
 };
 
 /**
@@ -43,7 +49,15 @@ export const getCollectionAddress = (publicKey = null) => {
  */
 export const getMojiAddress = (ownerKey = null, dna = null) => {
   // Your code here
-
+  if (dna === null && ownerKey === null) {
+    return NAMESPACE + PREFIXES.MOJI;
+  } else if (dna === null) {
+    return NAMESPACE + PREFIXES.MOJI + hashSha512(ownerKey).slice(0, 8);
+  } else {
+    const collectionPrefix = hashSha512(ownerKey).slice(0, 8);
+    const address = hashSha512(dna).slice(0, 54);
+    return (NAMESPACE + PREFIXES.MOJI + collectionPrefix + address).toString('hex');
+  }
 };
 
 /**
@@ -55,7 +69,12 @@ export const getMojiAddress = (ownerKey = null, dna = null) => {
  */
 export const getSireAddress = (ownerKey = null) => {
   // Your code here
-
+  if (ownerKey === null) {
+    return NAMESPACE + PREFIXES.SIRE_LISTING;
+  } else {
+    const sirePrefix = hashSha512(ownerKey).slice(0,62);
+    return (NAMESPACE + PREFIXES.SIRE_LISTING + sirePrefix).toString('hex');
+  }
 };
 
 /**

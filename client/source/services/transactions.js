@@ -29,7 +29,7 @@ const NAMESPACE = '5f4d76';
  */
 export const createTransaction = (privateKey, payload) => {
   // Enter your solution here
-
+  sign.sign(privateKey,payload);
 };
 
 /**

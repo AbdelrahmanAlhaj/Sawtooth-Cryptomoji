@@ -14,11 +14,8 @@
  *   your object's keys or random transactions may fail.
  */
 export const encode = object => {
-  // Enter your solution here  
-  console.log('object in encode ==> ',object);
-  const uintArrayObj = new Uint8Array(object).sort();
-  const sortJson = JSON.stringify(uintArrayObj);
-  return Buffer.from(sortJson);  
+  // Enter your solution here    
+  return Buffer.from(JSON.stringify(object, Object.keys(object).sort()));
 };
 
 /**
@@ -32,5 +29,8 @@ export const encode = object => {
  */
 export const decode = base64Str => {
   // Your code here
+  const bufferStr = Buffer.from(base64Str,'base64'); //buffer
 
+  var string = new TextDecoder("utf-8").decode(bufferStr);
+  return JSON.parse(string);    
 };
