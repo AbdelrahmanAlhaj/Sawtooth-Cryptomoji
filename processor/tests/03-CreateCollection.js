@@ -35,7 +35,6 @@ describe('Create Collection', function() {
     return handler.apply(txn, context)
       .then(() => {
         expect(context._state[address]).to.exist;
-
         const collection = decode(context._state[address]);
         expect(collection.key).to.equal(publicKey);
         expect(collection.moji).to.be.an('array');

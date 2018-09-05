@@ -3,7 +3,8 @@
 const { TransactionHandler } = require('sawtooth-sdk/processor/handler');
 const { InvalidTransaction } = require('sawtooth-sdk/processor/exceptions');
 const { decode } = require('./services/encoding');
-
+const { encode } = require('./services/encoding');
+const { getCollectionAddress } = require('./services/addressing')
 
 const FAMILY_NAME = 'cryptomoji';
 const FAMILY_VERSION = '0.1';
@@ -18,9 +19,9 @@ class MojiHandler extends TransactionHandler {
    * validator, declaring which family name, versions, and namespaces it
    * expects to handle. We'll fill this one in for you.
    */
-  constructor () {
+  constructor() {
     console.log('Initializing cryptomoji handler with namespace:', NAMESPACE);
-    super(FAMILY_NAME, [ FAMILY_VERSION ], [ NAMESPACE ]);
+    super(FAMILY_NAME, [FAMILY_VERSION], [NAMESPACE]);
   }
 
   /**
@@ -46,11 +47,36 @@ class MojiHandler extends TransactionHandler {
    *   - context.deleteState(addresses): deletes the state for the passed
    *     array of state addresses. Only needed if attempting the extra credit.
    */
-  apply (txn, context) {
+  apply(txn, context) {
     // Enter your solution here
     // (start by decoding your payload and checking which action it has)
+    // console.log("txn.header ==> ", txn.header);
+    console.log("txn.headerSignature ==> ", txn.headerSignature);
 
+    let payload = null;
+    try {
+      payload = decode(txn.payload);
+      if (payload.action === 'CREATE_COLLECTION') {
+        console.log("payload ==> ", payload);
+        return createCollection(context, payload, txn.header.signerPublicKey);
+      }
+    } catch (err) {
+      throw new InvalidTransaction('Unable to decode payload');
+    }
+    throw new InvalidTransaction('Unknown action');
   }
+}
+
+const createCollection = (context, { name }, publicKey) => {
+  const address = getCollectionAddress(publicKey);
+  return context.getState([address]).then(state => {
+    if (state[address].length > 0) {
+      throw new InvalidTransaction('Owner already exists');
+    }
+    const collection = {};
+    collection[address] = encode({ key: publicKey, moji: [name] });
+    return context.setState(collection);
+  });
 }
 
 module.exports = MojiHandler;

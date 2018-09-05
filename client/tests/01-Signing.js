@@ -74,6 +74,7 @@ describe('Signing module', function() {
     it('should generate valid Secp256k1 keys', function() {
       const privateKeyBytes = Buffer.from(keys.privateKey, 'hex');
       const publicKeyBytes = Buffer.from(keys.publicKey, 'hex');
+
       expect(secp256k1.privateKeyVerify(privateKeyBytes)).to.be.true;
       expect(secp256k1.publicKeyVerify(publicKeyBytes)).to.be.true;
     });

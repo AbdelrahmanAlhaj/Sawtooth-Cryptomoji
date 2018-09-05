@@ -11,6 +11,16 @@ const PREFIXES = {
   OFFER: '03'
 };
 
+const FULL_PREFIXES = Object.keys(PREFIXES).reduce((prefixes, key) => {
+  prefixes[key] = NAMESPACE + PREFIXES[key];
+  return prefixes;
+}, {});
+
+// Returns a hex-string SHA-512 hash sliced to a particular length
+const hash = (str, length) => {
+  return createHash('sha512').update(str).digest('hex').slice(0, length);
+};
+
 /**
  * A function that takes a public key and returns the corresponding collection
  * address.
@@ -24,8 +34,7 @@ const PREFIXES = {
  *   // '5f4d7600ecd7ef459ec82a01211983551c3ed82169ca5fa0703ec98e17f9b534ffb797'
  */
 const getCollectionAddress = publicKey => {
-  // Enter your solution here
-
+  return FULL_PREFIXES.COLLECTION + hash(publicKey, 62);
 };
 
 /**
@@ -33,8 +42,7 @@ const getCollectionAddress = publicKey => {
  * corresponding moji address.
  */
 const getMojiAddress = (ownerKey, dna) => {
-  // Your code here
-
+  return FULL_PREFIXES.MOJI + hash(ownerKey, 8) + hash(dna, 54);
 };
 
 /**
@@ -42,8 +50,7 @@ const getMojiAddress = (ownerKey, dna) => {
  * listing address.
  */
 const getSireAddress = ownerKey => {
-  // Your code here
-
+  return FULL_PREFIXES.SIRE_LISTING + hash(ownerKey, 62);
 };
 
 /**
@@ -58,8 +65,13 @@ const getSireAddress = ownerKey => {
  * dna strings.
  */
 const getOfferAddress = (ownerKey, addresses) => {
-  // Your code here
+  if (!Array.isArray(addresses)) {
+    addresses = [ addresses ];
+  }
 
+  return FULL_PREFIXES.OFFER
+    + hash(ownerKey, 8)
+    + hash(addresses.sort().join(''), 54);
 };
 
 /**
@@ -75,8 +87,9 @@ const getOfferAddress = (ownerKey, addresses) => {
  *   console.log(isValid);  // false
  */
 const isValidAddress = address => {
-  // Your code here
+  const pattern = `^${NAMESPACE}[0-9a-f]{64}$`;
 
+  return new RegExp(pattern).test(address);
 };
 
 module.exports = {
