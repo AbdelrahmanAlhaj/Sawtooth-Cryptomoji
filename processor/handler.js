@@ -2,9 +2,9 @@
 
 const { TransactionHandler } = require('sawtooth-sdk/processor/handler');
 const { InvalidTransaction } = require('sawtooth-sdk/processor/exceptions');
-const { decode } = require('./services/encoding');
-const { encode } = require('./services/encoding');
-const { getCollectionAddress } = require('./services/addressing')
+const { encode, decode } = require('./services/encoding');
+const { getCollectionAddress, getMojiAddress, getSireAddress } = require('./services/addressing');
+const { createHash } = require('crypto');
 
 const FAMILY_NAME = 'cryptomoji';
 const FAMILY_VERSION = '0.1';
@@ -50,15 +50,14 @@ class MojiHandler extends TransactionHandler {
   apply(txn, context) {
     // Enter your solution here
     // (start by decoding your payload and checking which action it has)
-    // console.log("txn.header ==> ", txn.header);
-    console.log("txn.headerSignature ==> ", txn.headerSignature);
-
     let payload = null;
     try {
       payload = decode(txn.payload);
       if (payload.action === 'CREATE_COLLECTION') {
-        console.log("payload ==> ", payload);
-        return createCollection(context, payload, txn.header.signerPublicKey);
+        return createCollection(context, txn);
+      }
+      if (payload.action === 'SELECT_SIRE') {
+        return checkCollectionsExists(context, txn, payload);
       }
     } catch (err) {
       throw new InvalidTransaction('Unable to decode payload');
@@ -67,16 +66,108 @@ class MojiHandler extends TransactionHandler {
   }
 }
 
-const createCollection = (context, { name }, publicKey) => {
+const checkCollectionsExists = (context, txn, payload) => {
+  const address = getCollectionAddress(txn.header.signerPublicKey);
+  return context.getState([address]).then(state => {
+
+    if (state[address].length > 0 && payload.sire) {
+      return selectSire(payload.sire, txn, context);
+    } else {
+      throw new InvalidTransaction();
+    }
+  });
+}
+
+const createCollection = (context, txn) => {
+  const publicKey = txn.header.signerPublicKey;
   const address = getCollectionAddress(publicKey);
+
   return context.getState([address]).then(state => {
     if (state[address].length > 0) {
       throw new InvalidTransaction('Owner already exists');
     }
-    const collection = {};
-    collection[address] = encode({ key: publicKey, moji: [name] });
-    return context.setState(collection);
+    const mojies = createMojies(txn.signature, publicKey);
+
+    const mojiesAddresses = getMojiAddressses(publicKey, txn.signature);
+    const collection = {
+      key: publicKey,
+      moji: mojiesAddresses
+    };
+    const update = {};
+    update[address] = encode(collection);
+    update[mojiesAddresses[0]] = encode(mojie1(txn.signature, publicKey));
+    update[mojiesAddresses[1]] = encode(mojie2(txn.signature, publicKey));
+    update[mojiesAddresses[2]] = encode(mojie3(txn.signature, publicKey));
+    return context.setState(update);
   });
+}
+
+const selectSire = (sireAddress, txn, context) => {
+  const publicKey = txn.header.signerPublicKey;
+  const address = getSireAddress(publicKey);
+
+  return context.getState([sireAddress]).then(sireAddressState => {
+    if (sireAddressState[sireAddress].length > 0) {
+      return context.getState([address]).then(state => {
+        const update = {};
+        const sireListing = {
+          owner: publicKey,
+          sire: sireAddress
+        }
+        update[address] = encode(sireListing);
+        return context.setState(update);
+      });
+    } else {
+      throw new InvalidTransaction();
+    }
+  });
+}
+
+const getMojiAddressses = (publicKey, signature) => {
+  return [
+    getMojiAddress(publicKey, mojie1(signature, publicKey).dna),
+    getMojiAddress(publicKey, mojie2(signature, publicKey).dna),
+    getMojiAddress(publicKey, mojie3(signature, publicKey).dna)
+  ]
+}
+
+const createMojies = (signature, publicKey) => {
+  return [mojie1(signature, publicKey), mojie2(signature, publicKey), mojie3(signature, publicKey)];
+}
+
+const dna1 = (signature) => { return createHash('sha512').update(signature).digest('hex').slice(0, 36); }
+const dna2 = (dna1) => { return createHash('sha512').update(dna1).digest('hex').slice(0, 36) };
+const dna3 = (dna2) => { return createHash('sha512').update(dna2).digest('hex').slice(0, 36) };
+
+const mojie1 = (signature, publicKey) => {
+  return {
+    "dna": dna1(signature),
+    "owner": publicKey,
+    "breeder": "<string, moji address>",
+    "sire": "<string, moji address>",
+    "bred": ["<strings, moji addresses>"],
+    "sired": ["<strings, moji addresses>"]
+  }
+}
+const mojie2 = (signature, publicKey) => {
+  return {
+    "dna": dna2(dna1(signature)),
+    "owner": publicKey,
+    "breeder": "<string, moji address>",
+    "sire": "<string, moji address>",
+    "bred": ["<strings, moji addresses>"],
+    "sired": ["<strings, moji addresses>"]
+  }
+}
+const mojie3 = (signature, publicKey) => {
+  return {
+    "dna": dna3(dna2(dna1(signature))),
+    "owner": publicKey,
+    "breeder": "<string, moji address>",
+    "sire": "<string, moji address>",
+    "bred": ["<strings, moji addresses>"],
+    "sired": ["<strings, moji addresses>"]
+  }
 }
 
 module.exports = MojiHandler;

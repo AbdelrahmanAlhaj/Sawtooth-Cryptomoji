@@ -13,25 +13,25 @@ const Txn = require('./services/mock_txn');
 const Context = require('./services/mock_context');
 
 
-describe('Create Collection', function() {
+describe('Create Collection', function () {
   let handler = null;
   let context = null;
   let txn = null;
   let publicKey = null;
   let address = null;
 
-  before(function() {
+  before(function () {
     handler = new MojiHandler();
   });
 
-  beforeEach(function() {
+  beforeEach(function () {
     context = new Context();
     txn = new Txn({ action: 'CREATE_COLLECTION' });
     publicKey = txn._publicKey;
     address = getCollectionAddress(publicKey);
   });
 
-  it('should create collections at correct addresses', function() {
+  it('should create collections at correct addresses', function () {
     return handler.apply(txn, context)
       .then(() => {
         expect(context._state[address]).to.exist;
@@ -41,7 +41,7 @@ describe('Create Collection', function() {
       });
   });
 
-  it('should create three moji for each new collection', function() {
+  it('should create three moji for each new collection', function () {
     return handler.apply(txn, context)
       .then(() => {
         const collection = decode(context._state[address]);
@@ -52,12 +52,13 @@ describe('Create Collection', function() {
         expect(context._state[mojiAddress]).to.exist;
 
         const moji = decode(context._state[mojiAddress]);
+
         expect(moji.dna).to.be.a.hexString.with.lengthOf(36);
         expect(mojiAddress).to.equal(getMojiAddress(publicKey, moji.dna));
       });
   });
 
-  it('should create moji deterministically', function() {
+  it('should create moji deterministically', function () {
     let oldMoji = null;
 
     return handler.apply(txn, context)
@@ -66,7 +67,7 @@ describe('Create Collection', function() {
         oldMoji = collection.moji;
 
         // Delete the created collection and cryptomoji
-        oldMoji.concat(address).forEach(addr => delete context._state[addr] );
+        oldMoji.concat(address).forEach(addr => delete context._state[addr]);
 
         return handler.apply(txn, context);
       })
@@ -76,7 +77,7 @@ describe('Create Collection', function() {
       });
   });
 
-  it('should create moji pseudorandomly', function() {
+  it('should create moji pseudorandomly', function () {
     let oldMoji = null;
 
     return handler.apply(txn, context)
@@ -85,7 +86,7 @@ describe('Create Collection', function() {
         oldMoji = collection.moji;
 
         // Delete the created collection and cryptomoji
-        oldMoji.concat(address).forEach(addr => delete context._state[addr] );
+        oldMoji.concat(address).forEach(addr => delete context._state[addr]);
 
         // Modify a character in the signature to change the prng seed
         const firstSig = txn.signature[0] !== 'f'
@@ -101,7 +102,7 @@ describe('Create Collection', function() {
       });
   });
 
-  it('should reject a public key that has already been used', function() {
+  it('should reject a public key that has already been used', function () {
     const submission = handler.apply(txn, context)
       .then(() => handler.apply(txn, context));
 
